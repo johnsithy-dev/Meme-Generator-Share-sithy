@@ -16,6 +16,7 @@ import PublicProfile from './pages/PublicProfile.jsx';
 import Footer from './components/Footer.jsx';
 import Services from './pages/Services.jsx';
 import ScrollToTopButton from './components/ScrollToTopButton.jsx';
+import MemeView from './pages/MemeView.jsx';
 
 export default function App() {
   return (
@@ -34,6 +35,7 @@ export default function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/u/:uid" element={<PublicProfile />} />
+          <Route path="/meme/:memeId" element={<MemeView />} />
           <Route
             path="/admin"
             element={
