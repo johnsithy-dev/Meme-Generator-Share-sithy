@@ -1210,3 +1210,6 @@ canvas { max-width: 100%; display: block; }
   background: var(--ink);
   color: var(--paper);
 }
+.ma-pin-edit-title {
+  margin-bottom: 14px;
+}
