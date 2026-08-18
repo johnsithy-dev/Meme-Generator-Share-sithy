@@ -8,6 +8,8 @@ import {
   deleteComment,
   toggleCommentLike,
   getUserProfile,
+  updateMeme,
+  deleteMeme,
 } from '../firebase.js';
 
 function buildCommentTree(flatComments) {
@@ -154,6 +156,10 @@ export default function MemeCard({ meme, autoOpen = false }) {
   const [posting, setPosting] = useState(false);
   const [showPin, setShowPin] = useState(false);
   const [authorProfile, setAuthorProfile] = useState(null);
+  const [editingMeme, setEditingMeme] = useState(false);
+  const [editTitleValue, setEditTitleValue] = useState(meme.title || '');
+  const [localTitle, setLocalTitle] = useState(meme.title || '');
+  const [savingMeme, setSavingMeme] = useState(false);
 
   const isLiked = user && likedBy.includes(user.uid);
   const tree = buildCommentTree(comments);
@@ -166,12 +172,13 @@ export default function MemeCard({ meme, autoOpen = false }) {
     if (showPin) window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
   }, [showPin]);
+
   useEffect(() => {
-  if (autoOpen) {
-    openPin();
-  }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [autoOpen]);
+    if (autoOpen) {
+      openPin();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoOpen]);
 
   async function openPin() {
     setShowPin(true);
@@ -210,33 +217,59 @@ export default function MemeCard({ meme, autoOpen = false }) {
 
   function handleDownload() {
     const link = document.createElement('a');
-    link.download = (meme.title ? meme.title.replace(/\s+/g, '_') : 'meme') + '.jpg';
+    link.download = (localTitle ? localTitle.replace(/\s+/g, '_') : 'meme') + '.jpg';
     link.href = meme.imageUrl;
     link.click();
   }
 
   async function handleShare() {
-  const shareUrl = `${window.location.origin}/meme/${meme.id}`;
-  const shareData = {
-    title: meme.title || 'Check out this meme',
-    text: meme.title || 'Check out this meme!',
-    url: shareUrl,
-  };
-  if (navigator.share) {
-    try {
-      await navigator.share(shareData);
-    } catch (err) {
-      // user cancelled, ignore
-    }
-  } else {
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      alert('Link copied to clipboard!');
-    } catch (err) {
-      console.error(err);
+    const shareUrl = `${window.location.origin}/meme/${meme.id}`;
+    const shareData = {
+      title: localTitle || 'Check out this meme',
+      text: localTitle || 'Check out this meme!',
+      url: shareUrl,
+    };
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        // user cancelled, ignore
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        alert('Link copied to clipboard!');
+      } catch (err) {
+        console.error(err);
+      }
     }
   }
-}
+
+  async function handleSaveMemeTitle() {
+    setSavingMeme(true);
+    try {
+      await updateMeme(meme.id, { title: editTitleValue });
+      setLocalTitle(editTitleValue);
+      setEditingMeme(false);
+    } catch (err) {
+      console.error(err);
+      alert('Could not save changes.');
+    } finally {
+      setSavingMeme(false);
+    }
+  }
+
+  async function handleDeleteMeme() {
+    if (!window.confirm('Delete this meme? This cannot be undone.')) return;
+    try {
+      await deleteMeme(meme.id);
+      setShowPin(false);
+      window.location.reload();
+    } catch (err) {
+      console.error(err);
+      alert('Could not delete this meme.');
+    }
+  }
 
   async function handlePostComment(e) {
     e.preventDefault();
@@ -280,10 +313,10 @@ export default function MemeCard({ meme, autoOpen = false }) {
     <>
       <div className="ma-sticker">
         <button className="ma-sticker-img-btn" onClick={openPin}>
-          <img src={meme.imageUrl} alt={meme.title || 'meme'} />
+          <img src={meme.imageUrl} alt={localTitle || 'meme'} />
         </button>
 
-        {meme.title && <div className="ma-sticker-title">{meme.title}</div>}
+        {localTitle && <div className="ma-sticker-title">{localTitle}</div>}
 
         <div className="ma-sticker-meta">
           {meme.authorId ? (
@@ -324,7 +357,7 @@ export default function MemeCard({ meme, autoOpen = false }) {
             </button>
 
             <div className="ma-pin-image-col">
-              <img src={meme.imageUrl} alt={meme.title || 'meme'} />
+              <img src={meme.imageUrl} alt={localTitle || 'meme'} />
             </div>
 
             <div className="ma-pin-side-col">
@@ -341,7 +374,38 @@ export default function MemeCard({ meme, autoOpen = false }) {
                 <button className="ma-btn ghost ma-small-btn" onClick={handleShare}>↗ Share</button>
               </div>
 
-              {meme.title && <h3 className="ma-pin-title">{meme.title}</h3>}
+              {(isAdmin || (user && user.uid === meme.authorId)) && !editingMeme && (
+                <div className="ma-pin-actions">
+                  <button className="ma-btn ghost ma-small-btn" onClick={() => setEditingMeme(true)}>
+                    ✎ Edit title
+                  </button>
+                  <button className="ma-btn ghost ma-small-btn" onClick={handleDeleteMeme}>
+                    🗑 Delete
+                  </button>
+                </div>
+              )}
+
+              {editingMeme ? (
+                <div className="ma-pin-edit-title">
+                  <input
+                    className="ma-input"
+                    value={editTitleValue}
+                    onChange={(e) => setEditTitleValue(e.target.value)}
+                    maxLength={60}
+                    placeholder="Title"
+                  />
+                  <div className="ma-btn-row" style={{ marginTop: 8 }}>
+                    <button className="ma-btn primary ma-small-btn" onClick={handleSaveMemeTitle} disabled={savingMeme}>
+                      Save
+                    </button>
+                    <button className="ma-btn ghost ma-small-btn" onClick={() => setEditingMeme(false)}>
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                localTitle && <h3 className="ma-pin-title">{localTitle}</h3>
+              )}
 
               {meme.authorId ? (
                 <Link
