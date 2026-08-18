@@ -5,15 +5,14 @@ export default function AdminDashboard() {
   const [tab, setTab] = useState('memes');
 
   return (
-    <div>
-      <div className="ma-tabs" style={{ marginBottom: 16 }}>
-        <button className={`ma-tab ${tab === 'memes' ? 'active' : ''}`} onClick={() => setTab('memes')}>
-          Memes
-        </button>
-        <button className={`ma-tab ${tab === 'messages' ? 'active' : ''}`} onClick={() => setTab('messages')}>
-          Messages
-        </button>
-      </div>
+    <<div className="ma-admin-tabs">
+  <button className={`ma-admin-tab ${tab === 'memes' ? 'active' : ''}`} onClick={() => setTab('memes')}>
+    Memes
+  </button>
+  <button className={`ma-admin-tab ${tab === 'messages' ? 'active' : ''}`} onClick={() => setTab('messages')}>
+    Messages
+  </button>
+</div>
       {tab === 'memes' ? <MemesPanel /> : <MessagesPanel />}
     </div>
   );
