@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { updateProfilePicture, updateUserProfile, fetchMemesByUser, updateMeme, deleteMeme, resendVerificationEmail } from '../firebase.js';
+import MemeCard from '../components/MemeCard.jsx';
 
 const MAX_DIM = 300;
 
@@ -223,53 +224,44 @@ export default function Profile() {
           <div className="ma-grid">
             {myMemes.map((meme) => (
               <div key={meme.id}>
-                <div className="ma-sticker">
-                  <img src={meme.imageUrl} alt="" />
+                <MemeCard meme={meme} />
 
-                  {editingId === meme.id ? (
-                    <div style={{ marginTop: 8 }}>
-                      <input
-                        className="ma-input"
-                        value={editTitle}
-                        onChange={(e) => setEditTitle(e.target.value)}
-                        placeholder="Title"
-                        maxLength={60}
-                      />
-                      <div className="ma-btn-row" style={{ marginTop: 8 }}>
-                        <button
-                          className="ma-btn primary"
-                          onClick={() => saveEdit(meme.id)}
-                          disabled={busyId === meme.id}
-                        >
-                          Save
-                        </button>
-                        <button className="ma-btn ghost" onClick={cancelEdit}>
-                          Cancel
-                        </button>
-                      </div>
+                {editingId === meme.id ? (
+                  <div className="ma-owner-edit-panel">
+                    <input
+                      className="ma-input"
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      placeholder="Title"
+                      maxLength={60}
+                    />
+                    <div className="ma-btn-row" style={{ marginTop: 8 }}>
+                      <button
+                        className="ma-btn primary"
+                        onClick={() => saveEdit(meme.id)}
+                        disabled={busyId === meme.id}
+                      >
+                        Save
+                      </button>
+                      <button className="ma-btn ghost" onClick={cancelEdit}>
+                        Cancel
+                      </button>
                     </div>
-                  ) : (
-                    <>
-                      {meme.title && <div className="ma-sticker-title">{meme.title}</div>}
-                      <div className="ma-sticker-meta">
-                        <span>{(meme.likedBy || []).length} like{(meme.likedBy || []).length === 1 ? '' : 's'}</span>
-                        <span>{meme.createdAt?.toDate ? meme.createdAt.toDate().toLocaleDateString() : ''}</span>
-                      </div>
-                      <div className="ma-btn-row" style={{ marginTop: 6 }}>
-                        <button className="ma-btn ghost" onClick={() => startEdit(meme)}>
-                          Edit
-                        </button>
-                        <button
-                          className="ma-btn ghost"
-                          onClick={() => handleDelete(meme.id)}
-                          disabled={busyId === meme.id}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
+                  </div>
+                ) : (
+                  <div className="ma-btn-row ma-owner-controls">
+                    <button className="ma-btn ghost ma-small-btn" onClick={() => startEdit(meme)}>
+                      Edit title
+                    </button>
+                    <button
+                      className="ma-btn ghost ma-small-btn"
+                      onClick={() => handleDelete(meme.id)}
+                      disabled={busyId === meme.id}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
